@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../app/controllers/chat_controller.dart';
 import '../../app/data/models/chat_message.dart';
+import '../../app/services/chat_history_service.dart';
 import '../../app/services/model_manager.dart';
 import '../../core/theme/colors.dart';
 
@@ -15,6 +16,7 @@ class ChatScreen extends GetView<ChatController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
+      drawer: _buildHistoryDrawer(context),
       body: Column(
         children: [
           // Header
@@ -47,12 +49,98 @@ class ChatScreen extends GetView<ChatController> {
     );
   }
 
+  Widget _buildHistoryDrawer(BuildContext context) {
+    final historyService = Get.find<ChatHistoryService>();
+    
+    return Drawer(
+      backgroundColor: AppColors.backgroundDark,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  controller.startNewChat();
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('New Chat'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            const Divider(color: Colors.white10),
+            Expanded(
+              child: Obx(() {
+                if (historyService.sessions.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No chat history',
+                      style: GoogleFonts.notoSans(color: AppColors.textSecondaryDark),
+                    ),
+                  );
+                }
+                
+                return ListView.builder(
+                  itemCount: historyService.sessions.length,
+                  itemBuilder: (context, index) {
+                    final session = historyService.sessions[index];
+                    final isSelected = controller.currentSession.value?.id == session.id;
+                    
+                    return ListTile(
+                      leading: Icon(
+                        Icons.chat_bubble_outline,
+                        color: isSelected ? AppColors.primary : AppColors.textSecondaryDark,
+                        size: 20,
+                      ),
+                      title: Text(
+                        session.title,
+                        style: GoogleFonts.notoSans(
+                          color: isSelected ? Colors.white : AppColors.textPrimaryDark,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.textSecondaryDark),
+                        onPressed: () async {
+                          await historyService.deleteSession(session.id);
+                          if (isSelected) {
+                            controller.startNewChat();
+                          }
+                        },
+                      ),
+                      selected: isSelected,
+                      selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+                      onTap: () {
+                        controller.loadSession(session);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 12,
         bottom: 16,
-        left: 16,
+        left: 8,
         right: 16,
       ),
       decoration: BoxDecoration(
@@ -65,11 +153,12 @@ class ChatScreen extends GetView<ChatController> {
       ),
       child: Row(
         children: [
-          IconButton(
-            icon:
-                const Icon(Icons.delete_sweep, color: AppColors.textPrimaryDark),
-            onPressed: () => controller.clearChat(),
-            tooltip: 'Clear chat',
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: AppColors.textPrimaryDark),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Chat History',
+            ),
           ),
           Expanded(
             child: Obx(() => GestureDetector(

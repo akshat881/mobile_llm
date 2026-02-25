@@ -41,4 +41,26 @@ class ChatMessage {
       tokensPerSecond: tokensPerSecond ?? this.tokensPerSecond,
     );
   }
+
+  Map<String, dynamic> toMap(String sessionId) {
+    return {
+      'id': id,
+      'sessionId': sessionId,
+      'content': content,
+      'role': role.name,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  factory ChatMessage.fromMap(Map<String, dynamic> map) {
+    return ChatMessage(
+      id: map['id'] as String,
+      content: map['content'] as String,
+      role: MessageRole.values.firstWhere(
+        (e) => e.name == map['role'],
+        orElse: () => MessageRole.user,
+      ),
+      timestamp: DateTime.parse(map['timestamp'] as String),
+    );
+  }
 }
