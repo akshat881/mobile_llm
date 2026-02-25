@@ -1,0 +1,32 @@
+Analyzing lm_studio_mobile...                                   
+
+  error • Undefined name 'AppColors' • lib/app/controllers/model_discovery_controller.dart:40:20 • undefined_identifier
+  error • Const variables must be initialized with a constant value • lib/app/controllers/model_discovery_controller.dart:221:5 • const_initialized_with_non_constant_value
+  error • The values in a const list literal must be constants • lib/app/controllers/model_discovery_controller.dart:221:5 • non_constant_list_element
+  error • Undefined name 'AppColors' • lib/app/controllers/model_discovery_controller.dart:221:5 • undefined_identifier
+  error • The values in a const list literal must be constants • lib/app/controllers/model_discovery_controller.dart:222:5 • non_constant_list_element
+  error • Undefined name 'AppColors' • lib/app/controllers/model_discovery_controller.dart:222:5 • undefined_identifier
+  error • The values in a const list literal must be constants • lib/app/controllers/model_discovery_controller.dart:223:5 • non_constant_list_element
+  error • Undefined name 'AppColors' • lib/app/controllers/model_discovery_controller.dart:223:5 • undefined_identifier
+  error • The values in a const list literal must be constants • lib/app/controllers/model_discovery_controller.dart:224:5 • non_constant_list_element
+  error • Undefined name 'AppColors' • lib/app/controllers/model_discovery_controller.dart:224:5 • undefined_identifier
+   info • Unnecessary braces in a string interpolation • lib/app/services/huggingface_service.dart:137:13 • unnecessary_brace_in_string_interps
+warning • Unused import: '../widgets/filter_chip_widget.dart' • lib/presentation/screens/model_discovery_screen.dart:1:8 • unused_import
+warning • Unused import: '../widgets/search_bar_widget.dart' • lib/presentation/screens/model_discovery_screen.dart:2:8 • unused_import
+warning • Duplicate import • lib/presentation/screens/model_discovery_screen.dart:3:8 • duplicate_import
+warning • Unused import: '../widgets/filter_chip_widget.dart' • lib/presentation/screens/model_discovery_screen.dart:3:8 • unused_import
+warning • Duplicate import • lib/presentation/screens/model_discovery_screen.dart:4:8 • duplicate_import
+warning • Unused import: '../widgets/search_bar_widget.dart' • lib/presentation/screens/model_discovery_screen.dart:4:8 • unused_import
+warning • Duplicate import • lib/presentation/screens/model_discovery_screen.dart:10:8 • duplicate_import
+warning • Unused import: '../widgets/search_bar_widget.dart' • lib/presentation/screens/model_discovery_screen.dart:10:8 • unused_import
+warning • Duplicate import • lib/presentation/screens/model_discovery_screen.dart:11:8 • duplicate_import
+warning • Unused import: '../widgets/filter_chip_widget.dart' • lib/presentation/screens/model_discovery_screen.dart:11:8 • unused_import
+  error • The method 'SearchBarWidget' isn't defined for the type 'ModelDiscoveryScreen' • lib/presentation/screens/model_discovery_screen.dart:31:19 • undefined_method
+  error • The method 'FilterChipWidget' isn't defined for the type 'ModelDiscoveryScreen' • lib/presentation/screens/model_discovery_screen.dart:215:22 • undefined_method
+   info • The private field _isServerRunning could be 'final' • lib/presentation/screens/server_screen.dart:13:8 • prefer_final_fields
+   info • The local variable '_dio' starts with an underscore • test_search.dart:4:9 • no_leading_underscores_for_local_identifiers
+   info • Don't invoke 'print' in production code • test_search.dart:22:7 • avoid_print
+   info • Don't invoke 'print' in production code • test_search.dart:24:9 • avoid_print
+   info • Don't invoke 'print' in production code • test_search.dart:27:7 • avoid_print
+   info • Don't invoke 'print' in production code • test_search.dart:30:5 • avoid_print
+

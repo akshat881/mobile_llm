@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Downloaded Models Manager</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5b13ec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#171122", // Matches provided component bg
+                        "card-dark": "#221933", // Matches provided component header
+                        "border-dark": "#2f2348", // Matches provided component border
+                        "accent-dark": "#443267", // Matches provided component borders/accent
+                        "text-muted": "#a492c9", // Matches provided component muted text
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #171122; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #443267; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5b13ec; 
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #5b13ec;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #5b13ec;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased overflow-x-hidden selection:bg-primary selection:text-white">
+<div class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto shadow-2xl overflow-hidden bg-background-light dark:bg-background-dark">
+<!-- Header -->
+<header class="sticky top-0 z-30 flex items-center justify-between px-4 py-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-border-dark">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-card-dark transition-colors text-slate-700 dark:text-white">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight flex-1 text-center">Local Models</h1>
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all">
+<span class="material-symbols-outlined text-[24px]">add</span>
+</button>
+</header>
+<!-- Main Content Scroll Area -->
+<main class="flex-1 overflow-y-auto pb-24">
+<!-- Storage Dashboard -->
+<section class="p-4 space-y-4">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-medium text-slate-500 dark:text-text-muted uppercase tracking-wider">Device Storage</h2>
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">12.4 GB Used</span>
+</div>
+<div class="bg-white dark:bg-card-dark rounded-xl p-5 border border-gray-100 dark:border-accent-dark shadow-sm">
+<div class="flex items-end justify-between mb-2">
+<div>
+<p class="text-3xl font-bold tracking-tighter">115.6 <span class="text-lg text-slate-400 dark:text-text-muted font-normal">GB Free</span></p>
+</div>
+<div class="text-right">
+<p class="text-xs text-slate-400 dark:text-text-muted mb-1">Total Capacity</p>
+<p class="font-mono text-sm font-semibold">128 GB</p>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="relative h-3 w-full rounded-full bg-gray-100 dark:bg-background-dark overflow-hidden">
+<!-- System Usage -->
+<div class="absolute left-0 top-0 h-full bg-slate-300 dark:bg-accent-dark" style="width: 45%"></div>
+<!-- App Usage -->
+<div class="absolute left-[45%] top-0 h-full bg-gradient-to-r from-primary to-purple-400" style="width: 10%"></div>
+</div>
+<div class="flex justify-between mt-3 text-xs font-medium">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-slate-600 dark:text-white">Models (10%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-accent-dark"></span>
+<span class="text-slate-400 dark:text-text-muted">System &amp; Other</span>
+</div>
+</div>
+</div>
+</section>
+<!-- RAM Indicator (Sticky-ish within flow or separate) -->
+<div class="px-4 pb-2">
+<div class="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<div class="flex-1 flex justify-between items-center">
+<span class="text-xs font-semibold uppercase tracking-wide">RAM Usage</span>
+<span class="text-xs font-mono">6.1 / 8.0 GB</span>
+</div>
+</div>
+</div>
+<!-- Models List -->
+<section class="px-4 py-2 space-y-4">
+<div class="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-border-dark">
+<h3 class="text-xl font-bold">Downloaded (4)</h3>
+<button class="text-xs font-medium text-primary hover:text-primary/80">Manage</button>
+</div>
+<!-- Model Card 1: Active -->
+<div class="group relative bg-white dark:bg-card-dark rounded-xl p-4 border border-primary/50 shadow-lg shadow-primary/5 transition-all">
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white shadow-inner">
+<span class="font-bold text-lg">L3</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-bold text-base truncate pr-2 text-slate-900 dark:text-white">Llama 3 8B Instruct</h4>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">Q4_K_M</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">4.7 GB</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-red-500 transition-colors p-1">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Controls Area -->
+<div class="mt-4 pt-3 border-t border-gray-100 dark:border-border-dark flex items-center justify-between gap-4">
+<div class="flex-1">
+<div class="flex justify-between text-[10px] font-medium text-primary mb-1">
+<span>Loaded in RAM</span>
+<span>100%</span>
+</div>
+<div class="h-1.5 w-full bg-gray-100 dark:bg-background-dark rounded-full overflow-hidden">
+<div class="h-full bg-primary w-full rounded-full shadow-[0_0_10px_rgba(91,19,236,0.5)]"></div>
+</div>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-primary transition-all duration-300" id="toggle1" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-primary cursor-pointer" for="toggle1"></label>
+</div>
+</div>
+</div>
+<!-- Model Card 2: Inactive -->
+<div class="group relative bg-white dark:bg-card-dark rounded-xl p-4 border border-gray-100 dark:border-border-dark hover:border-gray-300 dark:hover:border-accent-dark transition-all">
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 dark:bg-accent-dark flex items-center justify-center text-slate-500 dark:text-text-muted">
+<span class="font-bold text-lg">P3</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-bold text-base truncate pr-2 text-slate-900 dark:text-white">Phi-3 Mini 4K</h4>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">Q6_K</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">2.1 GB</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-red-500 transition-colors p-1">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Controls Area -->
+<div class="mt-4 pt-3 border-t border-gray-100 dark:border-border-dark flex items-center justify-between gap-4">
+<div class="flex-1">
+<div class="flex justify-between text-[10px] font-medium text-slate-400 dark:text-text-muted mb-1">
+<span>Not Loaded</span>
+</div>
+<div class="h-1.5 w-full bg-gray-100 dark:bg-background-dark rounded-full overflow-hidden">
+<div class="h-full bg-primary w-0 transition-all duration-500"></div>
+</div>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 dark:border-slate-600 transition-all duration-300" id="toggle2" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 dark:bg-accent-dark cursor-pointer" for="toggle2"></label>
+</div>
+</div>
+</div>
+<!-- Model Card 3: Loading -->
+<div class="group relative bg-white dark:bg-card-dark rounded-xl p-4 border border-gray-100 dark:border-border-dark hover:border-gray-300 dark:hover:border-accent-dark transition-all">
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 dark:bg-accent-dark flex items-center justify-center text-slate-500 dark:text-text-muted">
+<span class="font-bold text-lg">M7</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-bold text-base truncate pr-2 text-slate-900 dark:text-white">Mistral 7B v0.3</h4>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">Q4_0</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">4.1 GB</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-red-500 transition-colors p-1">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Controls Area -->
+<div class="mt-4 pt-3 border-t border-gray-100 dark:border-border-dark flex items-center justify-between gap-4">
+<div class="flex-1">
+<div class="flex justify-between text-[10px] font-medium text-primary mb-1">
+<span class="animate-pulse">Loading into RAM...</span>
+<span>45%</span>
+</div>
+<div class="h-1.5 w-full bg-gray-100 dark:bg-background-dark rounded-full overflow-hidden">
+<div class="h-full bg-primary/70 w-[45%] rounded-full animate-pulse"></div>
+</div>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in pointer-events-none opacity-50">
+<input checked="" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-primary transition-all duration-300" id="toggle3" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-primary cursor-pointer" for="toggle3"></label>
+</div>
+</div>
+</div>
+<!-- Model Card 4: Inactive -->
+<div class="group relative bg-white dark:bg-card-dark rounded-xl p-4 border border-gray-100 dark:border-border-dark hover:border-gray-300 dark:hover:border-accent-dark transition-all opacity-70">
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 dark:bg-accent-dark flex items-center justify-center text-slate-500 dark:text-text-muted">
+<span class="font-bold text-lg">G2</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-bold text-base truncate pr-2 text-slate-900 dark:text-white">Gemma 2B</h4>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">FP16</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-background-dark text-slate-600 dark:text-gray-300 border border-gray-200 dark:border-border-dark">1.5 GB</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-red-500 transition-colors p-1">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Controls Area -->
+<div class="mt-4 pt-3 border-t border-gray-100 dark:border-border-dark flex items-center justify-between gap-4">
+<div class="flex-1">
+<div class="flex justify-between text-[10px] font-medium text-slate-400 dark:text-text-muted mb-1">
+<span>Not Loaded</span>
+</div>
+<div class="h-1.5 w-full bg-gray-100 dark:bg-background-dark rounded-full overflow-hidden">
+<div class="h-full bg-primary w-0 transition-all duration-500"></div>
+</div>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 dark:border-slate-600 transition-all duration-300" id="toggle4" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 dark:bg-accent-dark cursor-pointer" for="toggle4"></label>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Nav Bar -->
+<nav class="absolute bottom-0 w-full bg-card-dark border-t border-border-dark z-40">
+<div class="flex justify-around items-center px-2 py-2 pb-5"> <!-- pb-5 to account for iOS home indicator -->
+<a class="flex flex-col items-center justify-center w-full py-1 text-text-muted hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform text-[24px]">chat_bubble</span>
+<span class="text-[10px] font-medium tracking-wide">Chat</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full py-1 text-white transition-colors group relative" href="#">
+<div class="absolute -top-1 w-8 h-1 bg-primary rounded-b-full"></div>
+<span class="material-symbols-outlined mb-1 text-primary drop-shadow-[0_0_8px_rgba(91,19,236,0.6)] text-[24px] fill-current">deployed_code</span>
+<span class="text-[10px] font-medium tracking-wide">Models</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full py-1 text-text-muted hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform text-[24px]">settings</span>
+<span class="text-[10px] font-medium tracking-wide">Settings</span>
+</a>
+</div>
+</nav>
+</div>
+</body></html>
