@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../app/controllers/chat_controller.dart';
 import '../../app/data/models/chat_message.dart';
 import '../../app/services/model_manager.dart';
@@ -297,17 +298,36 @@ class ChatScreen extends GetView<ChatController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SelectableText(
-                        message.content.isEmpty && message.isStreaming
-                            ? '...'
-                            : message.content,
-                        style: GoogleFonts.notoSans(
-                          fontSize: 16,
-                          color: message.content.isEmpty && message.isStreaming
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textPrimaryDark,
-                        ),
-                      ),
+                      message.content.isEmpty && message.isStreaming
+                          ? Text(
+                              '...',
+                              style: GoogleFonts.notoSans(
+                                fontSize: 16,
+                                color: AppColors.textSecondaryDark,
+                              ),
+                            )
+                          : MarkdownBody(
+                              data: message.content,
+                              selectable: true,
+                              styleSheet: MarkdownStyleSheet(
+                                p: GoogleFonts.notoSans(
+                                  fontSize: 16,
+                                  color: AppColors.textPrimaryDark,
+                                ),
+                                code: GoogleFonts.firaCode(
+                                  fontSize: 14,
+                                  backgroundColor: Colors.black.withValues(alpha: 0.3),
+                                  color: AppColors.primary,
+                                ),
+                                codeblockDecoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                  ),
+                                ),
+                              ),
+                            ),
                       if (message.isStreaming) ...[
                         const SizedBox(height: 8),
                         _buildStreamingIndicator(),
