@@ -1,0 +1,50 @@
+# llama.cpp source — not needed; pre-built libs are in ios/ios_libs/ and ios/llama.xcframework/
+llama.cpp/
+
+# Build artifacts
+build/
+.build/
+
+# Unnecessary docs (keep README)
+CHANGES_LAZY_LOADING.md
+HUGGINGFACE_DOWNLOAD.md
+IMPLEMENTATION_SUMMARY.md
+INTEGRATION_SIMPLE.md
+LAZY_LOADING.md
+LLAMA_CPP_FIXED.md
+LLAMA_CPP_INTEGRATION_COMPLETE.md
+PLUGIN_ARCHITECTURE.md
+QUICK_START_LAZY_LOADING.md
+README_RU.md
+SOLUTION_SUMMARY.md
+
+# Scripts not needed at runtime
+scripts/
+convert_to_gguf.py
+Makefile
+
+# IDE
+*.iml
+.idea/
+
+# macOS metadata
+.DS_Store
+
+# Test files
+test/
+
+# Assets not needed for package usage
+assets/
+
+# Android (not targeting)
+# android/
+
+# Clang config
+.clang-format
+.clang-tidy
+
+# Platforms we don't need in xcframework (tvOS, visionOS)
+ios/llama.xcframework/tvos-arm64/
+ios/llama.xcframework/tvos-arm64_x86_64-simulator/
+ios/llama.xcframework/xros-arm64/
+ios/llama.xcframework/xros-arm64_x86_64-simulator/

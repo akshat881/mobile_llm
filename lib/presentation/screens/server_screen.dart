@@ -1,63 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../app/controllers/server_controller.dart';
 import '../../core/theme/colors.dart';
 
-class ServerScreen extends StatefulWidget {
+class ServerScreen extends GetView<ServerController> {
   const ServerScreen({super.key});
-
-  @override
-  State<ServerScreen> createState() => _ServerScreenState();
-}
-
-class _ServerScreenState extends State<ServerScreen> {
-  bool _isServerRunning = true;
-  bool _exposeToNetwork = true;
-  String _selectedModel = 'Gemma 2 9B (Quantized)';
-  final List<String> _availableModels = [
-    'Gemma 2 9B (Quantized)',
-    'Mistral 7B Instruct v0.2',
-    'Llama 3 8B Chat',
-  ];
-
-  final List<LogEntry> _logs = [
-    LogEntry(
-      type: LogType.info,
-      time: '10:23:45',
-      message: 'Server started on 0.0.0.0:1234',
-    ),
-    LogEntry(
-      type: LogType.info,
-      time: '10:23:46',
-      message: 'Model \'Gemma 2 9B\' loaded successfully',
-    ),
-    LogEntry(
-      type: LogType.debug,
-      time: '10:23:46',
-      message: 'GPU Layers: 33/33 allocated',
-    ),
-    LogEntry(
-      type: LogType.post,
-      time: '10:24:12',
-      message: '/v1/chat/completions',
-      status: '200 OK',
-      duration: '124ms',
-      payload: '{"model": "gemma-2-9b", "messages": [...]}',
-    ),
-    LogEntry(
-      type: LogType.post,
-      time: '10:24:15',
-      message: '/v1/chat/completions',
-      status: '200 OK',
-      duration: '89ms',
-    ),
-    LogEntry(
-      type: LogType.get,
-      time: '10:24:20',
-      message: '/v1/models',
-      status: '200 OK',
-      duration: '4ms',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -92,27 +41,27 @@ class _ServerScreenState extends State<ServerScreen> {
                     color: AppColors.textPrimaryDark,
                   ),
                 ),
-                Row(
+                Obx(() => Row(
                   children: [
                     Container(
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: _isServerRunning ? AppColors.success : Colors.grey,
+                        color: controller.isServerRunning.value ? AppColors.success : Colors.grey,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _isServerRunning ? 'Running' : 'Stopped',
+                      controller.isServerRunning.value ? 'Running' : 'Stopped',
                       style: GoogleFonts.notoSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: _isServerRunning ? AppColors.success : Colors.grey,
+                        color: controller.isServerRunning.value ? AppColors.success : Colors.grey,
                       ),
                     ),
                   ],
-                ),
+                )),
               ],
             ),
           ),
@@ -183,16 +132,12 @@ class _ServerScreenState extends State<ServerScreen> {
                   ),
                 ],
               ),
-              Switch(
-                value: _exposeToNetwork,
-                onChanged: (value) {
-                  setState(() {
-                    _exposeToNetwork = value;
-                  });
-                },
+              Obx(() => Switch(
+                value: controller.exposeToNetwork.value,
+                onChanged: controller.setExposeToNetwork,
                 activeTrackColor: AppColors.primary,
                 activeThumbColor: Colors.white,
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 24),
@@ -222,14 +167,14 @@ class _ServerScreenState extends State<ServerScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        'http://192.168.1.5:1234/v1',
+                      child: Obx(() => Text(
+                        'http://${controller.serverIp.value}:${controller.serverPort.value}/v1',
                         style: GoogleFonts.spaceGrotesk(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: AppColors.primary,
                         ),
-                      ),
+                      )),
                     ),
                     IconButton(
                       icon: const Icon(
@@ -238,7 +183,12 @@ class _ServerScreenState extends State<ServerScreen> {
                         color: AppColors.textSecondaryDark,
                       ),
                       onPressed: () {
-                        // Copy to clipboard
+                        Clipboard.setData(ClipboardData(
+                            text: 'http://${controller.serverIp.value}:${controller.serverPort.value}/v1'));
+                        Get.snackbar('Copied', 'API URL copied to clipboard',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: AppColors.surfaceDark,
+                            colorText: Colors.white);
                       },
                     ),
                   ],
@@ -262,6 +212,8 @@ class _ServerScreenState extends State<ServerScreen> {
               ),
               const SizedBox(height: 8),
               Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF120d1d),
                   borderRadius: BorderRadius.circular(12),
@@ -269,58 +221,32 @@ class _ServerScreenState extends State<ServerScreen> {
                     color: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
-                child: DropdownButton<String>(
-                  value: _selectedModel,
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  dropdownColor: AppColors.surfaceDark,
+                child: Obx(() => Text(
+                  controller.isModelLoaded.value ? controller.currentModelName.value : 'No model loaded',
                   style: GoogleFonts.spaceGrotesk(
                     fontSize: 16,
-                    color: AppColors.textPrimaryDark,
+                    color: controller.isModelLoaded.value ? AppColors.textPrimaryDark : AppColors.textSecondaryDark,
                   ),
-                  items: _availableModels.map((model) {
-                    return DropdownMenuItem(
-                      value: model,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Text(model),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedModel = value;
-                      });
-                    }
-                  },
-                  icon: Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: Icon(
-                      Icons.expand_more,
-                      color: AppColors.textSecondaryDark,
-                    ),
-                  ),
-                ),
+                )),
               ),
               const SizedBox(height: 12),
-              Row(
+              Obx(() => Row(
                 children: [
-                  const Icon(
-                    Icons.memory,
+                  Icon(
+                    controller.isModelLoaded.value ? Icons.memory : Icons.warning_amber_rounded,
                     size: 16,
-                    color: AppColors.textSecondaryDark,
+                    color: controller.isModelLoaded.value ? AppColors.textSecondaryDark : AppColors.warning,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'VRAM Usage: 6.2GB / 12GB',
+                    controller.isModelLoaded.value ? 'Ready for inference' : 'Load a model in My Models to start server',
                     style: GoogleFonts.notoSans(
                       fontSize: 12,
-                      color: AppColors.textSecondaryDark,
+                      color: controller.isModelLoaded.value ? AppColors.textSecondaryDark : AppColors.warning,
                     ),
                   ),
                 ],
-              ),
+              )),
             ],
           ),
         ],
@@ -357,11 +283,7 @@ class _ServerScreenState extends State<ServerScreen> {
               Row(
                 children: [
                   TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _logs.clear();
-                      });
-                    },
+                    onPressed: () => controller.clearLogs(),
                     child: Text(
                       'Clear',
                       style: GoogleFonts.notoSans(
@@ -373,7 +295,7 @@ class _ServerScreenState extends State<ServerScreen> {
                   const SizedBox(width: 8),
                   TextButton(
                     onPressed: () {
-                      // Export logs
+                      // Optionally implement export logs later
                     },
                     child: Text(
                       'Export',
@@ -395,16 +317,18 @@ class _ServerScreenState extends State<ServerScreen> {
                 color: Colors.black,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: ListView.builder(
-                itemCount: _logs.length,
+              child: Obx(() => ListView.builder(
+                itemCount: controller.logs.length,
+                reverse: true, // Auto-scroll behavior since we insert at 0
                 itemBuilder: (context, index) {
-                  final log = _logs[index];
+                  final log = controller.logs[index];
                   return _buildLogEntry(log);
                 },
-              ),
+              )),
             ),
           ),
           const SizedBox(height: 8),
+          // Blinking cursor
           // Blinking cursor
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
@@ -420,7 +344,7 @@ class _ServerScreenState extends State<ServerScreen> {
               );
             },
             onEnd: () {
-              setState(() {});
+              // This creates an infinite loop naturally since it rebuilds
             },
           ),
         ],
