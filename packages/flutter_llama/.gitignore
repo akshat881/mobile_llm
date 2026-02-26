@@ -43,6 +43,14 @@ assets/
 .clang-format
 .clang-tidy
 
+# Android source (235 files, not needed — we only patched iOS)
+android/
+
+# Remaining loose files
+LICENSE
+CHANGELOG.md
+analysis_options.yaml
+
 # Platforms we don't need in xcframework (tvOS, visionOS)
 ios/llama.xcframework/tvos-arm64/
 ios/llama.xcframework/tvos-arm64_x86_64-simulator/
