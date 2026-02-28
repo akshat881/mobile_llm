@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -5,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../app/controllers/chat_controller.dart';
 import '../../app/data/models/chat_message.dart';
+import '../../app/data/models/attachment.dart';
 import '../../app/services/chat_history_service.dart';
 import '../../app/services/model_manager.dart';
 import '../../core/theme/colors.dart';
@@ -19,9 +21,7 @@ class ChatScreen extends GetView<ChatController> {
       drawer: _buildHistoryDrawer(context),
       body: Column(
         children: [
-          // Header
           _buildHeader(context),
-          // Chat messages area
           Expanded(
             child: Obx(() {
               if (controller.messages.isEmpty) {
@@ -42,6 +42,8 @@ class ChatScreen extends GetView<ChatController> {
               );
             }),
           ),
+          // Pending attachments preview
+          _buildPendingAttachments(),
           // Input area
           _buildInputArea(),
         ],
@@ -276,7 +278,7 @@ class ChatScreen extends GetView<ChatController> {
               const SizedBox(height: 8),
               Text(
                 controller.isModelLoaded.value
-                    ? 'Type a message below to chat with ${controller.currentModelName.value}'
+                    ? 'Type a message or attach files to chat with ${controller.currentModelName.value}'
                     : 'Go to My Models tab to load a model',
                 style: GoogleFonts.notoSans(
                   fontSize: 14,
@@ -298,24 +300,34 @@ class ChatScreen extends GetView<ChatController> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(4),
-                ),
-              ),
-              child: Text(
-                message.content,
-                style: GoogleFonts.notoSans(
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Show attachments if any
+                if (message.attachments != null && message.attachments!.isNotEmpty)
+                  ..._buildMessageAttachments(message.attachments!),
+                // Text content
+                if (message.content.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(4),
+                      ),
+                    ),
+                    child: Text(
+                      message.content,
+                      style: GoogleFonts.notoSans(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(width: 8),
@@ -330,6 +342,80 @@ class ChatScreen extends GetView<ChatController> {
               Icons.person,
               size: 20,
               color: AppColors.textPrimaryDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build attachment chips/previews in sent messages
+  List<Widget> _buildMessageAttachments(List<Attachment> attachments) {
+    return attachments.map((attachment) {
+      if (attachment.isImage) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220, maxHeight: 200),
+              child: Image.file(
+                attachment.file,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildDocumentChip(attachment),
+              ),
+            ),
+          ),
+        );
+      } else {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _buildDocumentChip(attachment),
+        );
+      }
+    }).toList();
+  }
+
+  Widget _buildDocumentChip(Attachment attachment) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            attachment.isImage ? Icons.image : Icons.description,
+            size: 18,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  attachment.fileName,
+                  style: GoogleFonts.notoSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimaryDark,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  attachment.sizeFormatted,
+                  style: GoogleFonts.notoSans(
+                    fontSize: 10,
+                    color: AppColors.textSecondaryDark,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -523,6 +609,126 @@ class ChatScreen extends GetView<ChatController> {
     );
   }
 
+  /// Pending attachments preview above input area
+  Widget _buildPendingAttachments() {
+    return Obx(() {
+      if (controller.pendingAttachments.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceDark.withValues(alpha: 0.95),
+          border: Border(
+            top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+        ),
+        child: SizedBox(
+          height: 72,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: controller.pendingAttachments.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final attachment = controller.pendingAttachments[index];
+              return _buildPendingAttachmentChip(attachment, index);
+            },
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildPendingAttachmentChip(Attachment attachment, int index) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+            ),
+          ),
+          child: attachment.isImage
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Image.file(
+                    attachment.file,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.broken_image,
+                      color: AppColors.textSecondaryDark,
+                    ),
+                  ),
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _getFileIcon(attachment.fileName),
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        attachment.fileName,
+                        style: GoogleFonts.notoSans(
+                          fontSize: 8,
+                          color: AppColors.textSecondaryDark,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+        // Remove button
+        Positioned(
+          top: -6,
+          right: -6,
+          child: GestureDetector(
+            onTap: () => controller.removeAttachment(index),
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 12, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'txt':
+      case 'md':
+      case 'log':
+        return Icons.text_snippet;
+      case 'csv':
+        return Icons.table_chart;
+      case 'json':
+        return Icons.data_object;
+      default:
+        return Icons.description;
+    }
+  }
+
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -534,61 +740,194 @@ class ChatScreen extends GetView<ChatController> {
           ),
         ),
       ),
-      child: Row(
-        children: [
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF120d1d),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: TextField(
-                controller: controller.textController,
-                style:
-                    const TextStyle(color: AppColors.textPrimaryDark),
-                maxLines: 4,
-                minLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (text) => controller.sendMessage(text),
-                decoration: InputDecoration(
-                  hintText: 'Message local model...',
-                  hintStyle: TextStyle(
-                    color: AppColors.textSecondaryDark,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 10),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Attachment button
+            GestureDetector(
+              onTap: () => _showAttachmentOptions(Get.context!),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.attach_file,
+                  color: AppColors.textSecondaryDark,
+                  size: 20,
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Obx(() => GestureDetector(
-                onTap: controller.isGenerating.value
-                    ? controller.stopGeneration
-                    : () => controller
-                        .sendMessage(controller.textController.text),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: controller.isGenerating.value
-                        ? AppColors.error
-                        : AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    controller.isGenerating.value
-                        ? Icons.stop
-                        : Icons.arrow_upward,
-                    color: Colors.white,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF120d1d),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: TextField(
+                  controller: controller.textController,
+                  style:
+                      const TextStyle(color: AppColors.textPrimaryDark),
+                  maxLines: 4,
+                  minLines: 1,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (text) => controller.sendMessage(text),
+                  decoration: InputDecoration(
+                    hintText: 'Message local model...',
+                    hintStyle: TextStyle(
+                      color: AppColors.textSecondaryDark,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 10),
                   ),
                 ),
-              )),
-        ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Obx(() => GestureDetector(
+                  onTap: controller.isGenerating.value
+                      ? controller.stopGeneration
+                      : () => controller
+                          .sendMessage(controller.textController.text),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: controller.isGenerating.value
+                          ? AppColors.error
+                          : AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      controller.isGenerating.value
+                          ? Icons.stop
+                          : Icons.arrow_upward,
+                      color: Colors.white,
+                    ),
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Show attachment options bottom sheet
+  void _showAttachmentOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Attach File',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimaryDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildAttachmentOption(
+                icon: Icons.description,
+                label: 'Document',
+                subtitle: 'PDF, TXT, Markdown, CSV, JSON',
+                color: AppColors.primary,
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickDocument();
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildAttachmentOption(
+                icon: Icons.photo_library,
+                label: 'Photo Library',
+                subtitle: 'Choose from gallery',
+                color: Colors.green,
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickImageFromGallery();
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildAttachmentOption(
+                icon: Icons.camera_alt,
+                label: 'Camera',
+                subtitle: 'Take a photo',
+                color: Colors.orange,
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickImageFromCamera();
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAttachmentOption({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: color, size: 22),
+      ),
+      title: Text(
+        label,
+        style: GoogleFonts.spaceGrotesk(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimaryDark,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: GoogleFonts.notoSans(
+          fontSize: 12,
+          color: AppColors.textSecondaryDark,
+        ),
+      ),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
     );
   }

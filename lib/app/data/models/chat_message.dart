@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'attachment.dart';
 
 enum MessageRole { user, assistant, system }
 
@@ -10,6 +11,7 @@ class ChatMessage {
   final bool isStreaming;
   final int? tokenCount;
   final double? tokensPerSecond;
+  final List<Attachment>? attachments;
 
   ChatMessage({
     String? id,
@@ -19,6 +21,7 @@ class ChatMessage {
     this.isStreaming = false,
     this.tokenCount,
     this.tokensPerSecond,
+    this.attachments,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -30,6 +33,7 @@ class ChatMessage {
     bool? isStreaming,
     int? tokenCount,
     double? tokensPerSecond,
+    List<Attachment>? attachments,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -39,6 +43,7 @@ class ChatMessage {
       isStreaming: isStreaming ?? this.isStreaming,
       tokenCount: tokenCount ?? this.tokenCount,
       tokensPerSecond: tokensPerSecond ?? this.tokensPerSecond,
+      attachments: attachments ?? this.attachments,
     );
   }
 

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:flutter_llama/flutter_llama.dart';
 import '../data/models/chat_message.dart';
+import '../data/models/attachment.dart';
 
 class InferenceService extends GetxService {
   final FlutterLlama _llama = FlutterLlama.instance;
@@ -32,14 +33,17 @@ class InferenceService extends GetxService {
     loadingStatus.value = 'Loading model ($fileSizeMB MB)...';
 
     try {
+      // Auto-detect optimal thread count from device CPU cores
+      final optimalThreads = Platform.numberOfProcessors.clamp(2, 8);
+
       final config = LlamaConfig(
         modelPath: modelPath,
-        nThreads: 4,     // 4 threads is a good sweet spot for mobile
-        nGpuLayers: 0,   // CPU only 
-        contextSize: 2048, // Must be large enough for context + generation
-        batchSize: 2048,   // MUST be equal to contextSize because flutter_llama evaluates the whole prompt at once
-        useGpu: false,
-        verbose: true,
+        nThreads: optimalThreads,
+        nGpuLayers: -1,      // Offload ALL layers to GPU (Metal/Vulkan)
+        contextSize: 2048,
+        batchSize: 512,      // Smaller batch = less memory overhead
+        useGpu: true,        // Enable Metal (iOS) / Vulkan (Android)
+        verbose: false,      // Disable verbose logging for performance
       );
 
       final success = await _llama.loadModel(config);
@@ -80,11 +84,11 @@ class InferenceService extends GetxService {
     tokensPerSecond.value = 0.0;
   }
 
-  /// Build a chat prompt from messages
+  /// Build a chat prompt from messages, including attachment context
   String _buildChatPrompt(List<ChatMessage> messages) {
     final buffer = StringBuffer();
     // Using ChatML format which works best for Qwen and most modern instruct models
-    buffer.writeln('<|im_start|>system\nYou are a helpful AI assistant. Be concise and clear.<|im_end|>');
+    buffer.writeln('<|im_start|>system\nYou are a helpful AI assistant. Be concise and clear. When the user provides document or image content, analyze and respond based on that content.<|im_end|>');
 
     // Keep only the recent messages to avoid exceeding the 2048 token context
     final recentMessages = messages.length > 10 
@@ -94,10 +98,32 @@ class InferenceService extends GetxService {
     for (final msg in recentMessages) {
       switch (msg.role) {
         case MessageRole.system:
-          // System prompt handled at the top
           break;
         case MessageRole.user:
-          buffer.writeln('<|im_start|>user\n${msg.content.trim()}<|im_end|>');
+          final contentBuffer = StringBuffer();
+          
+          // Inject attachment content before the user's message
+          if (msg.attachments != null && msg.attachments!.isNotEmpty) {
+            for (final attachment in msg.attachments!) {
+              if (attachment.hasExtractedText) {
+                if (attachment.isDocument) {
+                  contentBuffer.writeln('[Attached document: ${attachment.fileName}]');
+                  contentBuffer.writeln(attachment.extractedText);
+                  contentBuffer.writeln();
+                } else if (attachment.isImage) {
+                  contentBuffer.writeln('[Text extracted from image: ${attachment.fileName}]');
+                  contentBuffer.writeln(attachment.extractedText);
+                  contentBuffer.writeln();
+                }
+              } else if (attachment.isImage) {
+                contentBuffer.writeln('[Image attached: ${attachment.fileName}]');
+                contentBuffer.writeln();
+              }
+            }
+          }
+          
+          contentBuffer.write(msg.content.trim());
+          buffer.writeln('<|im_start|>user\n${contentBuffer.toString().trim()}<|im_end|>');
           break;
         case MessageRole.assistant:
           buffer.writeln('<|im_start|>assistant\n${msg.content.trim()}<|im_end|>');
@@ -168,16 +194,10 @@ class InferenceService extends GetxService {
       
       text = text.trim();
 
-      // Simulate streaming by yielding word chunks for smooth UI
+      // Yield the complete response immediately — no artificial delay
+      // The model already took time to generate, no need to slow the UI further
       if (text.isNotEmpty) {
-        final words = text.split(' ');
-        for (int i = 0; i < words.length; i++) {
-          if (_shouldCancel) break;
-          final word = i == 0 ? words[i] : ' ${words[i]}';
-          yield word;
-          // Small delay for visual streaming effect
-          await Future.delayed(const Duration(milliseconds: 20));
-        }
+        yield text;
       }
     } finally {
       stopwatch.stop();
@@ -225,6 +245,8 @@ class InferenceService extends GetxService {
 
   void stopGeneration() {
     _shouldCancel = true;
+    // Use native llama.cpp stop — immediately halts token generation in C++
+    _llama.stopGeneration();
   }
 
   @override
